@@ -34,11 +34,11 @@ func NewWriter(w io.WriteCloser, writeSize int, name string) TSBWriter {
 	return ret
 }
 
-func (b *TSBWriter) Write(p []byte) (int, error) {
+func (b TSBWriter) Write(p []byte) (int, error) {
 	return b.internal.Write(p)
 }
 
-func (b *TSBWriter) Close() error {
+func (b TSBWriter) Close() error {
 	defer func() {
 		b.internal.closed = true
 	}()

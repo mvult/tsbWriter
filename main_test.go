@@ -12,12 +12,12 @@ type slowWriter struct {
 	total int64
 }
 
-func (sw *slowWriter) Write(p []byte) (int, error) {
-	time.Sleep(time.Nanosecond * 100)
+func (sw slowWriter) Write(p []byte) (int, error) {
+	time.Sleep(time.Nanosecond * 1)
 	return len(p), nil
 }
 
-func (sw *slowWriter) Close() error {
+func (sw slowWriter) Close() error {
 	return nil
 }
 
@@ -28,7 +28,7 @@ func TestMain(t *testing.T) {
 		panic(err)
 	}
 	target := slowWriter{}
-	tsbWriter := NewTSBWriter(&target, 1024, "test")
+	tsbWriter := NewWriter(target, 8192, "test")
 
 	buf := make([]byte, 1024)
 	var n int
@@ -37,7 +37,7 @@ func TestMain(t *testing.T) {
 		n, err = source.Read(buf)
 		if err != nil {
 			if err == io.EOF {
-				time.Sleep(time.Second * 25)
+				time.Sleep(time.Second * 35)
 				return
 			}
 			panic(err)
