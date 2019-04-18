@@ -15,16 +15,18 @@ func init() {
 }
 
 type TSBWriter struct {
-	writer   io.WriteCloser
-	internal *buffer
-	name     string
-	written  int64
+	writer    io.WriteCloser
+	internal  *buffer
+	name      string
+	written   int64
+	closeChan chan struct{}
 }
 
 func NewWriter(w io.WriteCloser, writeSize int, name string) TSBWriter {
 	ret := TSBWriter{}
 	ret.writer = w
 	ret.internal = &buffer{}
+	ret.closeChan = make(chan struct{})
 	if name != "" {
 		ret.name = name
 		go ret.reportSize()
@@ -39,21 +41,28 @@ func (b TSBWriter) Write(p []byte) (int, error) {
 }
 
 func (b TSBWriter) Close() error {
-	defer func() {
+	go func() {
 		b.internal.closed = true
+		<-b.closeChan
+		err := b.writer.Close()
+		if err != nil {
+			panic(err)
+		}
 	}()
-	return b.writer.Close()
+
+	return nil
 }
 
 func (b *TSBWriter) reportSize() {
 	for {
 		if b.internal.closed {
 			if b.internal.b.Len() == 0 {
+				submitReport(b.name, b.internal.Len(), b.written, true)
 				return
 			}
 		}
 		time.Sleep(time.Second * 2)
-		submitReport(b.name, b.internal.Len(), b.written)
+		submitReport(b.name, b.internal.Len(), b.written, false)
 	}
 }
 
@@ -73,6 +82,7 @@ func (b *TSBWriter) writeToDestination(writeSize int) {
 						}
 						b.written += int64(n)
 					}
+					b.closeChan <- struct{}{}
 					return
 				}
 				time.Sleep(time.Millisecond * 500)

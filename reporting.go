@@ -8,21 +8,24 @@ import (
 )
 
 var reportDepot map[string]report
+var initialTime time.Time
 
 func init() {
 	reportDepot = make(map[string]report)
+	initialTime = time.Now()
 	go func() {
 		for {
-			time.Sleep(time.Second * 1)
+			time.Sleep(time.Second * 2)
 			printUpdate()
 		}
 	}()
 }
 
 type report struct {
-	name    string
-	size    int
-	written int64
+	name     string
+	size     int
+	written  int64
+	complete bool
 }
 
 func printUpdate() {
@@ -35,14 +38,15 @@ func printUpdate() {
 			table.Append([]string{r.name, toMB(int64(r.size)), toMB(r.written)})
 		}
 
-		table.SetCaption(true, fmt.Sprint(time.Now().Format("15:04:05")))
+		// table.SetCaption(true, fmt.Sprint(time.Now().Format("15:04:05")))
+		table.SetCaption(true, fmt.Sprint(time.Since(initialTime)))
 		table.Render()
 	}
 }
 
 // No checks whatsoever for duplicate names
-func submitReport(name string, size int, written int64) {
-	reportDepot[name] = report{name: name, size: size, written: written}
+func submitReport(name string, size int, written int64, complete bool) {
+	reportDepot[name] = report{name: name, size: size, written: written, complete: complete}
 }
 
 func toMB(n int64) string {
