@@ -21,7 +21,7 @@ type TSBWriter struct {
 	written  int64
 }
 
-func NewTSBWriter(w io.WriteCloser, writeSize int, name string) TSBWriter {
+func NewWriter(w io.WriteCloser, writeSize int, name string) TSBWriter {
 	ret := TSBWriter{}
 	ret.writer = w
 	ret.internal = &buffer{}

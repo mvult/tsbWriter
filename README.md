@@ -9,7 +9,7 @@ This library provides a read/write thread-safe buffered writer in Golang.  Inclu
 slowWriter := getSlowWriter()
 
 //Wraps slowWriter with an unbounded thread-safe buffer, allowing a much slower downstream connection to write at its leisure.  By adding a name, prompts writer to report on buffer size and total written periodically.
-tsbWriter := NewTSBWriter(slowWriter, 1024, "HTTP to external cache")
+tsbWriter := NewWriter(slowWriter, 1024, "HTTP to external cache")
 
 buf := make([]byte, 1024)
 var n int
