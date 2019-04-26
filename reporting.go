@@ -4,14 +4,17 @@ import (
 	"fmt"
 	"github.com/olekukonko/tablewriter"
 	"os"
+	"sync"
 	"time"
 )
 
 var reportDepot map[string]report
 var initialTime time.Time
+var reportMutex sync.Mutex
 
 func init() {
 	reportDepot = make(map[string]report)
+
 	initialTime = time.Now()
 	go func() {
 		for {
@@ -46,7 +49,9 @@ func printUpdate() {
 
 // No checks whatsoever for duplicate names
 func submitReport(name string, size int, written int64, complete bool) {
+	reportMutex.Lock()
 	reportDepot[name] = report{name: name, size: size, written: written, complete: complete}
+	reportMutex.Unlock()
 }
 
 func toMB(n int64) string {
