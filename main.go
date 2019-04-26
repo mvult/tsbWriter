@@ -67,6 +67,14 @@ func (b *TSBWriter) reportSize() {
 }
 
 func (b *TSBWriter) writeToDestination(writeSize int) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Printf("Panic on %v buffer: %v\nPassing panic upstream.\n", b.name, r)
+			panic(r)
+		}
+	}()
+
 	var n int
 	var err error
 	buf := make([]byte, writeSize)
