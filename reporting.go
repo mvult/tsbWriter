@@ -1,6 +1,7 @@
 package tsbWriter
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/olekukonko/tablewriter"
 	"os"
@@ -17,12 +18,6 @@ func init() {
 	reportDepot = make(map[string]report)
 	previousReport = time.Now()
 	initialTime = time.Now()
-	// go func() {
-	// 	for {
-	// 		time.Sleep(time.Second * 2)
-	// 		printUpdate()
-	// 	}
-	// }()
 }
 
 type report struct {
@@ -36,7 +31,13 @@ func printUpdate() {
 	if len(reportDepot) == 0 {
 		return
 	} else {
-		table := tablewriter.NewWriter(os.Stdout)
+		var buf bytes.Buffer
+		_, err := buf.Write([]byte(fmt.Sprintf("\r")))
+		if err != nil {
+			panic(err)
+		}
+		// table := tablewriter.NewWriter(os.Stdout)
+		table := tablewriter.NewWriter(&buf)
 		table.SetHeader([]string{"Buffer Name", "Current Size", "Total Written"})
 		for _, r := range reportDepot {
 			table.Append([]string{r.name, toMB(int64(r.size)), toMB(r.written)})
@@ -44,6 +45,11 @@ func printUpdate() {
 
 		table.SetCaption(true, fmt.Sprint(time.Since(initialTime)))
 		table.Render()
+		_, err = os.Stdout.Write(buf.Bytes())
+		if err != nil {
+			panic(err)
+		}
+		// table := tablewriter.NewWriter(os.Stdout)
 	}
 }
 
