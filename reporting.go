@@ -32,7 +32,7 @@ func printUpdate() {
 		return
 	} else {
 		var buf bytes.Buffer
-		_, err := buf.Write([]byte(fmt.Sprintf("\r")))
+		_, err := buf.Write([]byte("\x0c\r"))
 		if err != nil {
 			panic(err)
 		}
@@ -45,7 +45,7 @@ func printUpdate() {
 
 		table.SetCaption(true, fmt.Sprint(time.Since(initialTime)))
 		table.Render()
-		_, err = os.Stdout.Write(buf.Bytes())
+		_, err = os.Stdout.Write(append(buf.Bytes(), []byte("\x0c\r")...))
 		if err != nil {
 			panic(err)
 		}
