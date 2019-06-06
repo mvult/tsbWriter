@@ -162,7 +162,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read in the template with our SSE JavaScript code.
-	absPath, err := filepath.Abs("../github.com/mvult/index.html")
+	absPath, err := filepath.Abs("../github.com/mvult/tsbWriter/index.html")
 
 	t, err := template.ParseFiles(absPath)
 	if err != nil {
