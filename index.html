@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Buffer Report</title>
+</head>
+<body>
+	<script type="text/javascript">
+	    // Create a new HTML5 EventSource
+	    var source = new EventSource('/events/');
+	    // Create a callback for when a new message is received.
+	    source.onmessage = function(e) {
+	        // Append the `data` attribute of the message to the DOM.
+	      
+	        js = JSON.parse(e.data)
+	        
+	        document.body.innerHTML = '<span style="white-space: pre-line; font-family: monospace"><tt>' + js.data + '</tt></span>';
+	    };
+	</script>
+</body>
+</html>

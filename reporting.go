@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/olekukonko/tablewriter"
-	"os"
+	_ "os"
 	"sync"
 	"time"
 )
@@ -18,6 +18,7 @@ func init() {
 	reportDepot = make(map[string]report)
 	previousReport = time.Now()
 	initialTime = time.Now()
+	go startServer()
 }
 
 type report struct {
@@ -28,34 +29,32 @@ type report struct {
 }
 
 func printUpdate() {
-	if len(reportDepot) == 0 {
-		return
-	} else {
-		var buf bytes.Buffer
-		_, err := buf.Write([]byte("\x0c\r"))
-		if err != nil {
-			panic(err)
-		}
-		// table := tablewriter.NewWriter(os.Stdout)
-		table := tablewriter.NewWriter(&buf)
-		table.SetHeader([]string{"Buffer Name", "Current Size", "Total Written"})
-		for _, r := range reportDepot {
-			table.Append([]string{r.name, toMB(int64(r.size)), toMB(r.written)})
-		}
+	var buf bytes.Buffer
 
-		table.SetCaption(true, fmt.Sprint(time.Since(initialTime)))
-		table.Render()
-		_, err = os.Stdout.Write(append(buf.Bytes(), []byte("\x0c\r")...))
-		if err != nil {
-			panic(err)
-		}
-		// table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(&buf)
+	table.SetHeader([]string{"Buffer Name", "Current Size", "Total Written"})
+	for _, r := range reportDepot {
+		table.Append([]string{r.name, toMB(int64(r.size)), toMB(r.written)})
 	}
+
+	table.SetCaption(true, fmt.Sprint(time.Since(initialTime)))
+	table.Render()
+
+	b.messages <- fmt.Sprintf("%s", buf.Bytes())
 }
 
 // No checks whatsoever for duplicate names
 func submitReport(name string, size int, written int64, complete bool) {
 	reportMutex.Lock()
+
+	if complete {
+
+		delete(reportDepot, name)
+		reportMutex.Unlock()
+		printUpdate()
+		previousReport = time.Now()
+		return
+	}
 	reportDepot[name] = report{name: name, size: size, written: written, complete: complete}
 	reportMutex.Unlock()
 

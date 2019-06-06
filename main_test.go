@@ -41,7 +41,7 @@ func TestMain(t *testing.T) {
 				if err != nil {
 					panic(err)
 				}
-				time.Sleep(time.Second * 10)
+				time.Sleep(time.Second * 20)
 				return
 			}
 			panic(err)
