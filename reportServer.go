@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"path/filepath"
 )
 
 var b *Broker
@@ -161,9 +162,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read in the template with our SSE JavaScript code.
-	t, err := template.ParseFiles("index.html")
+	absPath, err := filepath.Abs("../github.com/mvult/index.html")
+
+	t, err := template.ParseFiles(absPath)
 	if err != nil {
-		log.Fatal("WTF dude, error parsing your template.  Error:", err)
+
+		absPath, _ = filepath.Abs("index.html")
+		t, err = template.ParseFiles(absPath)
+		if err != nil {
+			log.Fatal("WTF dude, error parsing your template.  Error:", err)
+		}
 	}
 
 	// Render the template, writing to `w`.
