@@ -136,9 +136,7 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		fmt.Fprintf(w, "data: %s\n\n", msg)
-		_, err = fmt.Fprintf(w, "data: %s \n\n", byteS)
-
+		_, err = fmt.Fprintf(w, "data: %s\n\n", byteS)
 		if err != nil {
 			panic(err)
 		}
@@ -165,7 +163,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	// Read in the template with our SSE JavaScript code.
 	t, err := template.ParseFiles("index.html")
 	if err != nil {
-		log.Fatal("WTF dude, error parsing your template.")
+		log.Fatal("WTF dude, error parsing your template.  Error:", err)
 	}
 
 	// Render the template, writing to `w`.
