@@ -3,10 +3,12 @@ package tsbWriter
 import (
 	"encoding/json"
 	"fmt"
+	"go/build"
 	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
+	"strings"
 )
 
 var b *Broker
@@ -161,25 +163,43 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Read in the template with our SSE JavaScript code.
-	absPath, err := filepath.Abs("../github.com/mvult/tsbWriter/index.html")
-
-	t, err := template.ParseFiles(absPath)
-	if err != nil {
-
-		absPath, _ = filepath.Abs("index.html")
-		t, err = template.ParseFiles(absPath)
-		if err != nil {
-			log.Fatal("WTF dude, error parsing your template.  Error:", err)
-		}
-	}
-
+	t := getIndex()
 	// Render the template, writing to `w`.
 	t.Execute(w, "friend")
 }
 
+func getIndex() *template.Template {
+	var path string
+	var err error
+	var t *template.Template
+
+	s := build.Default.GOPATH
+	ss := strings.Split(s, ";")
+
+	for _, c := range ss {
+		if len(c) < 2 {
+			continue
+		}
+		path = filepath.Join(c, "github.com/mvult/tsbWriter/index.html")
+		if err != nil {
+			continue
+		}
+		logger.Println(path)
+		t, err := template.ParseFiles(path)
+
+		if err == nil {
+			return t
+		}
+	}
+	path, _ = filepath.Abs("index.html")
+	t, err = template.ParseFiles(path)
+	if err != nil {
+		log.Fatal("Error importing template.  Is your GOPATH correct?  Error:", err)
+	}
+	return t
+}
+
 // Main routine
-//
 func startServer() {
 	// Make a new Broker instance
 	b = &Broker{
@@ -218,6 +238,7 @@ func startServer() {
 	// When we get a request at "/", call `handler`
 	// in a new goroutine.
 	http.Handle("/", http.HandlerFunc(handler))
+	fmt.Println("Serving buffer logs on localhost:8999")
 
 	// Start the server and listen forever on port 8000.
 	if err := http.ListenAndServe(":8999", nil); err != nil {
