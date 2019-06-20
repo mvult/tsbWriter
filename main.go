@@ -29,7 +29,7 @@ func NewWriter(w io.WriteCloser, writeSize int, name string) TSBWriter {
 	ret.internal = &buffer{}
 	ret.closeChan = make(chan struct{})
 	if name != "" {
-		ret.name = name + " " + string(rand.Int31())
+		ret.name = fmt.Sprintf("%v %v", name, rand.Int31())
 		go ret.reportSize()
 	}
 	go ret.writeToDestination(writeSize)

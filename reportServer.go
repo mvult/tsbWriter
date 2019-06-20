@@ -182,14 +182,12 @@ func getIndex() *template.Template {
 		}
 		path = filepath.Join(c, "github.com/mvult/tsbWriter/index.html")
 
-		logger.Println(path)
 		t, err := template.ParseFiles(path)
 		if err == nil {
 			return t
 		}
 
 		path = filepath.Join(c, "src/github.com/mvult/tsbWriter/index.html")
-		logger.Println(path)
 		t, err = template.ParseFiles(path)
 
 		if err == nil {
