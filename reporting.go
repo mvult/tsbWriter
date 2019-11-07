@@ -9,16 +9,52 @@ import (
 	"time"
 )
 
-var reportDepot map[string]report
+var rd reportDepot
 var initialTime time.Time
 var previousReport time.Time
-var reportMutex sync.Mutex
 
 func init() {
-	reportDepot = make(map[string]report)
+	rd = reportDepot{internal: make(map[string]report), lock: sync.RWMutex{}}
 	previousReport = time.Now()
 	initialTime = time.Now()
 	go startServer()
+}
+
+type reportDepot struct {
+	internal map[string]report
+	lock     sync.RWMutex
+}
+
+func (rd *reportDepot) GetAll() map[string]report {
+	rd.lock.Lock()
+	defer rd.lock.Unlock()
+
+	ret := make(map[string]report)
+	for k, v := range rd.internal {
+		ret[k] = v
+	}
+	return ret
+}
+
+func (rd *reportDepot) Get(k string) (report, bool) {
+	rd.lock.Lock()
+	defer rd.lock.Unlock()
+
+	ret, ok := rd.internal[k]
+	return ret, ok
+}
+
+func (rd *reportDepot) Set(k string, v report) {
+	rd.lock.Lock()
+	defer rd.lock.Unlock()
+
+	rd.internal[k] = v
+}
+
+func (rd *reportDepot) Del(k string) {
+	rd.lock.Lock()
+	defer rd.lock.Unlock()
+	delete(rd.internal, k)
 }
 
 type report struct {
@@ -33,7 +69,7 @@ func printUpdate() {
 
 	table := tablewriter.NewWriter(&buf)
 	table.SetHeader([]string{"Buffer Name", "Current Size", "Total Written"})
-	for _, r := range reportDepot {
+	for _, r := range rd.GetAll() {
 		table.Append([]string{r.name, toMB(int64(r.size)), toMB(r.written)})
 	}
 
@@ -45,18 +81,14 @@ func printUpdate() {
 
 // No checks whatsoever for duplicate names
 func submitReport(name string, size int, written int64, complete bool) {
-	reportMutex.Lock()
 
 	if complete {
-
-		delete(reportDepot, name)
-		reportMutex.Unlock()
+		rd.Del(name)
 		printUpdate()
 		previousReport = time.Now()
 		return
 	}
-	reportDepot[name] = report{name: name, size: size, written: written, complete: complete}
-	reportMutex.Unlock()
+	rd.Set(name, report{name: name, size: size, written: written, complete: complete})
 
 	if time.Since(previousReport) > time.Second*2 {
 		printUpdate()
