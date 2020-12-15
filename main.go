@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"runtime"
 	"time"
 )
 
@@ -15,7 +14,6 @@ var max int
 
 func init() {
 	logger = log.New(os.Stdout, "", log.Lshortfile)
-	logger.Println(runtime.GOOS)
 }
 
 type TSBWriter struct {
