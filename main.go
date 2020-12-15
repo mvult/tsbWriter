@@ -6,14 +6,22 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"runtime"
 	"time"
 )
 
 var logger *log.Logger
 var max int
+var reportingInterval int
 
 func init() {
 	logger = log.New(os.Stdout, "", log.Lshortfile)
+	logger.Println(runtime.GOOS)
+	if runtime.GOOS == "windows" {
+		reportingInterval = 15
+	} else {
+		reportingInterval = 3
+	}
 }
 
 type TSBWriter struct {
@@ -63,7 +71,7 @@ func (b *TSBWriter) reportSize() {
 				return
 			}
 		}
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * time.Duration(reportingInterval))
 		submitReport(b.name, b.internal.Len(), b.written, false)
 	}
 }
