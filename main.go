@@ -17,11 +17,13 @@ func init() {
 }
 
 type TSBWriter struct {
-	writer    io.WriteCloser
-	internal  *buffer
-	name      string
-	written   int64
-	closeChan chan struct{}
+	writer      io.WriteCloser
+	internal    *buffer
+	name        string
+	written     int64
+	closeChan   chan struct{}
+	errorChan   chan error
+	writerError bool
 }
 
 func NewWriter(w io.WriteCloser, writeSize int, name string) TSBWriter {
@@ -29,6 +31,7 @@ func NewWriter(w io.WriteCloser, writeSize int, name string) TSBWriter {
 	ret.writer = w
 	ret.internal = &buffer{}
 	ret.closeChan = make(chan struct{})
+	ret.errorChan = make(chan error)
 	if name != "" {
 		ret.name = fmt.Sprintf("%v %v", name, rand.Int31())
 		go ret.reportSize()
@@ -39,10 +42,20 @@ func NewWriter(w io.WriteCloser, writeSize int, name string) TSBWriter {
 }
 
 func (b TSBWriter) Write(p []byte) (int, error) {
-	return b.internal.Write(p)
+	select {
+	case err := <-b.errorChan:
+		return 0, err
+	default:
+		return b.internal.Write(p)
+	}
 }
 
 func (b TSBWriter) Close() error {
+	if b.writerError {
+		b.writer = nil
+		return nil
+	}
+
 	go func() {
 		b.internal.closed = true
 		<-b.closeChan
@@ -98,12 +111,16 @@ func (b *TSBWriter) writeToDestination(writeSize int) {
 				time.Sleep(time.Millisecond * 500)
 				continue
 			} else {
-				panic(err)
+				logger.Panicln(err)
 			}
 		}
 		n, err = b.writer.Write(buf[:n])
 		if err != nil {
-			logger.Panicln(err)
+			// logger.Panicln(err)
+			err = fmt.Errorf("TSBWriter error writing to underlying writer: %v", err)
+			logger.Println(err)
+			b.errorChan <- err
+			return
 		}
 		b.written += int64(n)
 	}
