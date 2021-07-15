@@ -3,12 +3,8 @@ package tsbWriter
 import (
 	"encoding/json"
 	"fmt"
-	"go/build"
 	"html/template"
-	"log"
 	"net/http"
-	"path/filepath"
-	"strings"
 )
 
 var b *Broker
@@ -167,39 +163,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	// Render the template, writing to `w`.
 	t.Execute(w, "friend")
 }
-
 func getIndex() *template.Template {
-	var path string
-	var err error
-	var t *template.Template
-
-	s := build.Default.GOPATH
-	ss := strings.Split(s, ";")
-
-	for _, c := range ss {
-		if len(c) < 2 {
-			continue
-		}
-		path = filepath.Join(c, "github.com/mvult/tsbWriter/index.html")
-
-		t, err := template.ParseFiles(path)
-		if err == nil {
-			return t
-		}
-
-		path = filepath.Join(c, "src/github.com/mvult/tsbWriter/index.html")
-		t, err = template.ParseFiles(path)
-
-		if err == nil {
-			return t
-		}
-	}
-	path, _ = filepath.Abs("index.html")
-	t, err = template.ParseFiles(path)
-	if err != nil {
-		log.Fatal("Error importing template.  Is your GOPATH correct?  Error:", err)
-	}
-	return t
+	return template.Must(template.New("Buffer Logs").Parse(indexHtml))
 }
 
 // Main routine
@@ -248,3 +213,23 @@ func startServer() {
 		panic(err)
 	}
 }
+
+const indexHtml = `<!DOCTYPE html>
+<html>
+<head>
+	<title>Buffer Report</title>
+</head>
+<body>
+	<script type="text/javascript">
+	    // Create a new HTML5 EventSource
+	    var source = new EventSource('/events/');
+		var test = 1;
+	    // Create a callback for when a new message is received.
+	    source.onmessage = function(e) {
+	        js = JSON.parse(e.data)
+	        
+	        document.body.innerHTML = '<span style="white-space: pre-line; font-family: monospace"><tt>' + js.data + '</tt></span>';
+	    };
+	</script>
+</body>
+</html>`
